@@ -1,0 +1,35 @@
+############## Prereqs ##########################################
+# Replace any instance of domain.tld with your own domain.  Caution this is not just a replace and run!  You must know where your existing icecast certificates are installed and set your locations.
+# I have 4 icecast servers running on the same box... because of player limitations on the web side.
+############## Begin Certbot Renewal ############################
+#Enable port 443 in Firewall for Certbot
+firewall-cmd --permanent --add-port=443/tcp
+firewall-cmd --reload
+#Run Certbot Renew all certs
+certbot renew
+#Disable port 443 in Firewall for Certbot
+firewall-cmd --permanent --remove-port=443/tcp
+firewall-cmd --reload
+#Backup expiring Icecast certificate
+#This is done by moving existing to same folder appending date and time to the file and changing extension to .bak
+#It then creates the same file empty to be appended in the next steps.
+mv -f /usr/share/icecast/ssl/domain.tld.pem /usr/share/icecast/ssl/domain.tld_$(date +%Y%m%d_%T).bak && touch /usr/share/icecast/ssl/domain.tld.pem
+#Append FullChain to icecast certificate
+cat /etc/letsencrypt/live/domain.tld/fullchain.pem > /usr/share/icecast/ssl/domain.tld.pem
+#Append privkey to icecast certificate
+cat /etc/letsencrypt/live/domain.tld/privkey.pem >> /usr/share/icecast/ssl/domain.tld.pem
+#The following commands to the end are just to stop icecast services and restart them.
+#These will very likely be different for you if you use 'service' or 'systemctl'
+#Kill all processes with the name icecast
+ps -ef | grep icecast | grep -v grep | awk '{print $2}' | xargs -r kill -9
+#Start my icecast instances
+/usr/bin/icecast -c /etc/icecast.xml -b &
+/usr/bin/icecast -c /etc/icecast1.xml -b &
+/usr/bin/icecast -c /etc/icecast2.xml -b &
+/usr/bin/icecast -c /etc/icecast3.xml -b &
+############## End Certbot Renewal ##############################
+#################################################################
+############## Post Steps as needed #############################
+# You may need to chown and chmod the icecast pem file ##########
+# Consider adding commands to this to set file owner or access rights
+# Consider setting up a crontab to run this script weekly or monthly
