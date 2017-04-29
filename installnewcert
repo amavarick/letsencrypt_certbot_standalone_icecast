@@ -1,0 +1,24 @@
+############## Prereqs ##########################################
+# Replace any instance of domain.tld with your own domain
+# The domain you are cert for must be setup and routing in DNS
+############## Begin Initial Certbot Install ####################
+#Install certbot, Note: epel repository must be installed
+yum install certbot
+#Enable port 443 in Firewall for Certbot
+#firewall-cmd --list-all
+firewall-cmd --permanent --add-port=443/tcp
+firewall-cmd --reload
+#Run Command for Certbot to create certificate
+certbot certonly \
+  --standalone \
+  --agree-tos \
+  --non-interactive \
+  --text \
+  --rsa-key-size 4096 \
+  --email admin@domain.tld \
+  --domains "domain.tld"
+#Disable port 443 in Firewall for Certbot
+firewall-cmd --permanent --remove-port=443/tcp
+firewall-cmd --reload
+#Letsencrypt certificates will now be located in /etc/letsencrypt/live/yourdomain.tld/
+############## End Initial Certbot Install #####################
